@@ -91,69 +91,42 @@ def gm_kcore ():
     # If the graph is undirected, all the degree values will be the same
     print "Computing kcore..."
     
+    cur = db_conn.cursor()
+    GM_TABLE_DUP = "GM_TABLE_DUP"
+    GM_KCORE_TMP = "GM_KCORE_TMP"
     gm_sql_table_drop_create(db_conn, GM_KCORE, "node_id integer, \
-                             coreness integer")
-    
-    try:
-        cur.execute("""SELECT * from GM_TABLE""")
-    except:
-        print "I can't SELECT from GM_TABLE"
-
-    rows = cur.fetchall()
-
-    # Create adjacency matrix
-    adjm = dict()
-    for e in rows:
-        if adjm.get(e[0]) == None:
-            adjm[e[0]] = [e[1]]
-        else:
-            adjm[e[0]].append(e[1])
-
-        if adjm.get(e[1]) == None:
-            adjm[e[1]] = [e[0]]
-        else:
-            adjm[e[1]].append(e[0])
-
-    # initilize degree of all vertex
-    degree = dict((v, len(adjm[v])) for v in adjm)
-
-    # number of vertex
-    n = len(adjm)
-    output = list()
-
-    # create buckets that contain all vertex of degree i in bucket i
-    maxdegree = max(degree)
-    D = [[] for i in range(maxdegree+1)]
-    for (v, d) in degree.items():
-        D[d].append(v)
-
-    # k is the coreness of the current node
-    k = 0
-
-    # Repeat n times:
-    # Scan buckets until find an i for which D[i] is nonempty
-    # Set k to max(k,i)
-    # Select a vertex v from D[i], k is the coreness, add (v,k) to output
-    # For each neighbor w of v not in output, subtract one from degree and move the node to the corresponding bucket
-    for i in range(n):
-        for (i, di) in enumerate(D):
-            if len(di) != 0:
-                k = max(k,i)
-                break;
-        v = di[0]
-        D[i].remove(v)
-        degree[v] = 0
-        output.append((v,k))
-        for w in adjm[v]:
-            if degree[w] > 0:
-                D[degree[w]].remove(w)
-                degree[w] -= 1
-                D[degree[w]].append(w)
-    #print output
-        
-    cur.executemany("""INSERT INTO GM_KCORE(node_id,coreness) VALUES (%s, %s)""", output)
+                                 coreness integer")
+    gm_sql_table_drop_create(db_conn, GM_TABLE_DUP, "src_id integer, dst_id integer")
+    cur.execute("insert into %s" % GM_TABLE_DUP + " select * from %s" %GM_TABLE)
     db_conn.commit()
-                            
+    k = 1
+    while True:
+        gm_sql_table_drop_create(db_conn, GM_KCORE_TMP, "src_id integer, \
+                                 neighbor integer")
+        cur.execute ("insert into %s" % GM_KCORE_TMP + 
+                     " select src_id, count(*) as neighbor from %s" % GM_TABLE_DUP +
+                     " group by src_id having count(*) <= %d" % k)
+        db_conn.commit()
+        cur.execute("select count(*) from %s" % GM_KCORE_TMP)
+        val = cur.fetchone()[0]
+        if val == 0:
+            k += 1
+            continue
+
+        cur.execute ("INSERT INTO %s" % GM_KCORE +
+                                 " SELECT src_id , %d" % k + " as coreness from %s" %GM_KCORE_TMP)
+        db_conn.commit()
+        cur.execute("delete from %s"%GM_TABLE_DUP + " where src_id in (select src_id from %s)"%GM_KCORE_TMP + 
+            " or dst_id in (select src_id from %s)"%GM_KCORE_TMP)
+        db_conn.commit()    
+        cur.execute("select count(*) from %s"%GM_TABLE_DUP)
+        val = cur.fetchone()[0]
+        if val == 0:
+            break
+
+    gm_sql_table_drop(db_conn, GM_TABLE_DUP)
+    gm_sql_table_drop(db_conn, GM_KCORE_TMP)
+
     cur.close()
 #Task 1: Degree distribution
 #-----------------------------------------------------------------------------#

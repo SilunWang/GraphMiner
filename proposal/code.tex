@@ -1,0 +1,132 @@
+% You should title the file with a .tex extension (hw1.tex, for example)
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{fancyhdr}
+\usepackage{enumerate}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{titlesec}
+
+\titleformat*{\section}{\large\bfseries}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Python,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+\oddsidemargin0cm
+\topmargin-2cm     %I recommend adding these three lines to increase the 
+\textwidth16.5cm   %amount of usable space on the page (and save trees)
+\textheight23.5cm  
+
+\newcommand{\question}[2] {\vspace{.25in} \hrule\vspace{0.5em}
+\noindent{\bf #1: #2} \vspace{0.5em}
+\hrule \vspace{.10in}}
+\renewcommand{\part}[1] {\vspace{.10in} {\bf (#1)}}
+
+\newcommand{\name}{Silun Wang}
+\newcommand{\andrew}{silunw@andrew.cmu.edu}
+\newcommand{\myname}{Yuwei Zhang}
+\newcommand{\myandrew}{yuweiz1@andrew.cmu.edu}
+\newcommand{\myhwnum}{1}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+ 
+\pagestyle{fancyplain}
+\lhead{\fancyplain{}{\textbf{Project Phase\myhwnum}}}      % Note the different brackets!
+\rhead{\fancyplain{}{\andrew\\ \myandrew}}
+\chead{\fancyplain{}{15-826 }}
+
+\begin{document}
+
+\medskip                        % Skip a "medium" amount of space
+                                % (latex determines what medium is)
+                                % Also try: \bigskip, \littleskip
+
+\thispagestyle{plain}
+\begin{center}                  % Center the following lines
+{\Large 15-826 Project Phase\myhwnum} \\[10pt]
+\name \\
+\andrew \\
+\myname \\
+\myandrew \\
+
+\end{center}
+\begin{lstlisting}
+#Task 0: kcore
+def gm_kcore ():
+    # compute coreness of each node
+    print "Computing kcore..."
+    
+    cur = db_conn.cursor()
+    GM_TABLE_DUP = "GM_TABLE_DUP"
+    GM_KCORE_TMP = "GM_KCORE_TMP"
+    gm_sql_table_drop_create(db_conn, GM_KCORE, "node_id integer, \
+                                 coreness integer")
+    gm_sql_table_drop_create(db_conn, GM_TABLE_DUP, "src_id integer, dst_id integer")
+
+    cur.execute("insert into %s" % GM_TABLE_DUP + " select src_id, dst_id from %s" %GM_TABLE)
+    db_conn.commit()
+
+    cur.execute("create index on %s (src_id, dst_id)" % GM_TABLE_DUP)
+    db_conn.commit()
+
+    k = 1
+    while True:
+        # each time we pick out elements with less than k neighbors and output them with coreness k
+        # delete from the original table whose neighbor are those elements
+        # if we get no such elements, we increase k
+        # until we get no elements left in the orginal table
+
+        gm_sql_table_drop_create(db_conn, GM_KCORE_TMP, "src_id integer, \
+                                 neighbor integer")
+        cur.execute ("insert into %s" % GM_KCORE_TMP + 
+                     " select src_id, count(*) as neighbor from %s" % GM_TABLE_DUP +
+                     " group by src_id having count(*) <= %d" % k)
+        cur.execute("create index on %s (src_id)" % GM_KCORE_TMP)
+        db_conn.commit()
+        cur.execute("select count(*) from %s" % GM_KCORE_TMP)
+        val = cur.fetchone()[0]
+        if val == 0:
+            k += 1
+            continue
+
+        cur.execute ("INSERT INTO %s" % GM_KCORE +
+                                 " SELECT src_id , %d" % k + " as coreness from %s" %GM_KCORE_TMP)
+        db_conn.commit()
+
+        cur.execute("delete from %s"%GM_TABLE_DUP + " where src_id in (select src_id from %s)"%GM_KCORE_TMP)
+        cur.execute("delete from %s"%GM_TABLE_DUP + " where dst_id in (select src_id from %s)"%GM_KCORE_TMP)
+        db_conn.commit()  
+
+        cur.execute("select count(*) from %s"%GM_TABLE_DUP)
+        val = cur.fetchone()[0]
+        if val == 0:
+            break
+
+    gm_sql_table_drop(db_conn, GM_TABLE_DUP)
+    gm_sql_table_drop(db_conn, GM_KCORE_TMP)
+
+    cur.close()
+\end{lstlisting}
+\end{document}
+
