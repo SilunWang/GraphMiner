@@ -1,12 +1,28 @@
 Graph Miner
 ============
-usage: gm_main.py [-h] --file INPUT_FILE [--delim DELIMITER] [--unweighted]
-                  [--undirected] --dest_dir DEST_DIR
-                  [--belief_file BELIEF_FILE]
+### Directory Hierachy
++ unit-test: unit test graphs
++ output: output results
++ doc: latex files
++ plot: plotting scripts
++ img: plots
++ others ...
 
-Graph Miner Using SQL v1.0
+
+### usage: 
+
+```
+gm_main.py [-h] --file INPUT_FILE 
+[--delim DELIMITER] [--unweighted]
+[--undirected] --dest_dir DEST_DIR
+[--belief_file BELIEF_FILE]
+```
+
+**Graph Miner Using SQL v1.0**
 
 optional arguments:
+
+```
   -h, --help            show this help message and exit
   --file INPUT_FILE     Full path to the file to load from. For weighted
                         graphs, the file should have the format (<src_id>,
@@ -36,6 +52,8 @@ optional arguments:
                         delimiter with --delim option. The prior beliefs are
                         expected to be centered around 0. i.e. positive nodes
                         have priors >0, negative nodes <0 and unknown nodes 0.
+                        
+```
 
 STEPS TO RUN
 ============
@@ -45,18 +63,26 @@ in gm_params.py
 2. Make sure python 2.7 is installed in the system. The program require psycopg2
 python package to be available to interface with the DB. 
 
-Run 'make install'
+Run `make install`
 
-3. Give read permissions to the postgres user for all the input files and write 
+Give read permissions to the postgres user for all the input files and write 
 permission for the output directory
 
-4. The command to run the sample file:
-python gm_main.py --file C:\Users\XD\Desktop\CMU_Courses\Projects\DM\Package\samplegraph.txt 
---dest_dir C:\Users\XD\Desktop\CMU_Courses\Projects\DM\Package\output 
---belief_file C:\Users\XD\Desktop\CMU_Courses\Projects\DM\Package\priorsbelief.txt 
---unweighted --undirected 
+### Run Demo
+Simply run: `make`
 
-or run 'make'
+If you want to change dataset, simply modify the configurations of `gm_main.py` in `makefile`
+
+### Plot Results
+Make sure you already have csv results in `output` directory, then run `make plot`
+
+### Compile Latex Report
+
+`make paper.pdf`
+
+### Zip Files
+
+`make all.tar`
 
 IMPORTANT
 =========
