@@ -1,12 +1,5 @@
 MAIN= paper
-TEXPARTS= 	$(MAIN).tex 		\
-		000abstract.tex		\
-		010intro.tex 		\
-		020survey.tex 		\
-		030method.tex 		\
-		040experiments.tex 	\
-		050conclusions.tex 	\
-		099appendix.tex 		
+TEXPARTS= 	$(MAIN).tex 			
 
 BIBPARTS= BIB/*.bib
 FIGPARTS= FIG/*.pdf FIG/*.png

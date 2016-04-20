@@ -5,8 +5,13 @@
 \usepackage{graphics}
 \usepackage{mdwlist}
 \usepackage{float}
+\usepackage{caption}
 \usepackage{wrapfig}
-
+\usepackage{listings}
+\usepackage{enumerate}
+\usepackage{hyperref}
+\usepackage{color}
+\usepackage{longtable}
 
 % christos: these look closer to NSF specs\dots
 \setlength{\oddsidemargin}{0.0in}
@@ -21,7 +26,26 @@
 \addtolength{\textheight}{-\headsep}
 \addtolength{\textheight}{-\footskip}
 
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
 
+\lstset{frame=tb,
+  language=SQL,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
 
 \begin{document}
 
@@ -39,7 +63,10 @@
 \newtheorem{algo}{Algorithm}
 \newtheorem{observation}{Observation}
 
-\title{Graph Mining Proposal}
+\setlength{\belowcaptionskip}{-20pt}
+\setlength{\abovecaptionskip}{5pt}
+
+\title{Graph Mining}
 
 
 \author{ {\em Yuwei Zhang} \\
@@ -55,18 +82,29 @@
 
 \maketitle
 
-\section{Survey}
+\section{Introduction}
+Many realworld datasets contain valueable information to be discovered. In this paper, we present a graph mining tool -- \textbf{Graph Miner} which employs simple SQL commands for efficiently mining large datasets through PostgresSQL. On 15 realworld datasets, we present our discoveries about global patterns and anomoly detections.
+
+\section{Phase1: Survey}
     \label{sec:survey}
-    \input{020survey}
+    \input{010survey}
 
 
-\section{Unit Tests}
+\section{Phase1: Unit Tests}
     \label{sec:experiments}
-    \input{040experiments}
+    \input{020experiments}
 
-\section{Experiment Results}
+\section{Phase1: Experiment Results}
     \label{sec:conclusions}
-    \input{050conclusions}
+    \input{030result}
+
+\section{Phase2: Indexing}
+    \label{sec:index}
+    \input{040index}
+
+\section{Phase3: Discovery}
+    \label{sec:final}
+    \input{050final}
 
 
 \bibliography{BIB/christosref,BIB/other}

@@ -3,14 +3,15 @@
 
 #Initialization database parameters
 GM_DB = "postgres"
-GM_DB_USER = "postgres"
+GM_DB_USER = "yuweiz1"
 GM_DB_PASS = "password"
-GM_DB_PORT = 5432
+GM_DB_PORT = 15072
 
 #Default Table names
 GM_TABLE = "GM_TABLE"
 GM_TABLE_UNDIRECT = "GM_TABLE_UNDIRECTED"
 GM_NODES = "GM_NODES"
+GM_KCORE = "GM_KCORE"
 
 # Degree distribution params
 GM_NODE_DEGREES = "GM_NODE_DEGREES"
@@ -34,13 +35,14 @@ gm_param_radius_max_iter = 50           # max iterations
 # eigendecomposition
 GM_EIG_VALUES = "GM_EIG_VALUES"
 GM_EIG_VECTORS = "GM_EIG_VECTORS"
+GM_KCORE = "GM_KCORE"
 
-gm_param_eig_max_iter = 3              # maximun iterations for Lanczos-SO
+gm_param_eig_max_iter = 8           # maximun iterations for Lanczos-SO
 gm_param_eig_thres1 = 0.1              # threhold for deciding to perform SO
 gm_param_eig_thres2 = 0.01             # stopping threshold
 gm_param_qr_max_iter = 500               # maximum iterations for QR algorithm
 gm_param_qr_thres = 0.01               # QR algorithm stop threshold
-gm_param_eig_k = 3                      # number of eigenvectors to return                      
+gm_param_eig_k = 8                      # number of eigenvectors to return                      
 
 # belief propagation
 GM_BELIEF_PRIOR = "GM_BELIEF_PRIOR"

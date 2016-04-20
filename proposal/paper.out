@@ -1,0 +1,37 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [1][-]{section.2}{Phase1: Survey}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Papers read by Yuwei Zhang }{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Papers read by Silun Wang}{section.2}% 4
+\BOOKMARK [1][-]{section.3}{Phase1: Unit Tests}{}% 5
+\BOOKMARK [2][-]{subsection.3.1}{Test Case I}{section.3}% 6
+\BOOKMARK [2][-]{subsection.3.2}{Test Case II}{section.3}% 7
+\BOOKMARK [2][-]{subsection.3.3}{Test Case III}{section.3}% 8
+\BOOKMARK [2][-]{subsection.3.4}{Test Case IV}{section.3}% 9
+\BOOKMARK [2][-]{subsection.3.5}{Test Case V}{section.3}% 10
+\BOOKMARK [1][-]{section.4}{Phase1: Experiment Results}{}% 11
+\BOOKMARK [2][-]{subsection.4.1}{Core value}{section.4}% 12
+\BOOKMARK [2][-]{subsection.4.2}{Degeneracy value}{section.4}% 13
+\BOOKMARK [2][-]{subsection.4.3}{Core value distribution}{section.4}% 14
+\BOOKMARK [1][-]{section.5}{Phase2: Indexing}{}% 15
+\BOOKMARK [2][-]{subsection.5.1}{Dataset}{section.5}% 16
+\BOOKMARK [2][-]{subsection.5.2}{Performance}{section.5}% 17
+\BOOKMARK [3][-]{subsubsection.5.2.1}{Undirected Social Network: Facebook}{subsection.5.2}% 18
+\BOOKMARK [3][-]{subsubsection.5.2.2}{Directed Social Network: Wiki Vote}{subsection.5.2}% 19
+\BOOKMARK [3][-]{subsubsection.5.2.3}{Collaboration Network}{subsection.5.2}% 20
+\BOOKMARK [3][-]{subsubsection.5.2.4}{P2P Network}{subsection.5.2}% 21
+\BOOKMARK [2][-]{subsection.5.3}{Observation}{section.5}% 22
+\BOOKMARK [1][-]{section.6}{Phase3: Discovery}{}% 23
+\BOOKMARK [2][-]{subsection.6.1}{User-manual documentation on k-degeneracy}{section.6}% 24
+\BOOKMARK [2][-]{subsection.6.2}{Dataset}{section.6}% 25
+\BOOKMARK [2][-]{subsection.6.3}{Results}{section.6}% 26
+\BOOKMARK [3][-]{subsubsection.6.3.1}{Degree Distribution}{subsection.6.3}% 27
+\BOOKMARK [3][-]{subsubsection.6.3.2}{Pagerank Distribution}{subsection.6.3}% 28
+\BOOKMARK [3][-]{subsubsection.6.3.3}{Eigen Value Distribution}{subsection.6.3}% 29
+\BOOKMARK [3][-]{subsubsection.6.3.4}{Connected-component-size distribution}{subsection.6.3}% 30
+\BOOKMARK [3][-]{subsubsection.6.3.5}{Coreness Value Distribution}{subsection.6.3}% 31
+\BOOKMARK [3][-]{subsubsection.6.3.6}{Radius Distribution}{subsection.6.3}% 32
+\BOOKMARK [3][-]{subsubsection.6.3.7}{Degree VS PageRank Distribution}{subsection.6.3}% 33
+\BOOKMARK [3][-]{subsubsection.6.3.8}{Degree VS Coreness Distribution}{subsection.6.3}% 34
+\BOOKMARK [2][-]{subsection.6.4}{Conclusions}{section.6}% 35
+\BOOKMARK [1][-]{section.7}{Labor Division}{}% 36
+\BOOKMARK [1][-]{section.8}{Acknowledgement}{}% 37

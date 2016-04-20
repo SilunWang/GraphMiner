@@ -6,7 +6,9 @@ from math import sqrt
 import os
 import time
 
-db_conn = None;
+db_conn = None
+# 1 for non-clustering src, 2 for clustering src, 3 for composite index
+index_type = 3
 
 
 # Convert directed to undirected + remove multiple edges
@@ -47,21 +49,23 @@ def gm_create_node_table ():
     
 def gm_save_tables (dest_dir, belief):
     print "Saving tables..."
-    gm_sql_save_table_to_file(db_conn, GM_KCORE, "node_id, coreness", \
+    # gm_sql_save_table_to_file(db_conn, GM_KCORE, "node_id, kvalue", \
+                                  # os.path.join(dest_dir,"kcore.csv"), ",");
+    gm_sql_save_table_to_file(db_conn, "GM_CORE_VALUES", "node_id, kvalue", \
                                   os.path.join(dest_dir,"kcore.csv"), ",");
 
     gm_sql_save_table_to_file(db_conn, GM_DEGREE_DISTRIBUTION, "degree, count", \
-                                  os.path.join(dest_dir,"degreedist.csv"), ",");
+                                  os.path.join(dest_dir,"1_degreedist.csv"), ",");
     gm_sql_save_table_to_file(db_conn, GM_INDEGREE_DISTRIBUTION, "degree, count", \
                                   os.path.join(dest_dir,"indegreedist.csv"), ",");
     gm_sql_save_table_to_file(db_conn, GM_OUTDEGREE_DISTRIBUTION, "degree, count", \
                                   os.path.join(dest_dir,"outdegreedist.csv"), ",");
 
     gm_sql_save_table_to_file(db_conn, GM_NODE_DEGREES, "node_id, in_degree, out_degree", \
-                                  os.path.join(dest_dir,"degree.csv"), ",");
+                                  os.path.join(dest_dir,"8_degree.csv"), ",");
 
     gm_sql_save_table_to_file(db_conn, GM_PAGERANK, "node_id, page_rank", \
-                                  os.path.join(dest_dir,"pagerank.csv"), ",");
+                                  os.path.join(dest_dir,"2_pagerank.csv"), ",");
                                   
 
     gm_sql_save_table_to_file(db_conn, GM_CON_COMP, "node_id, component_id", \
@@ -78,17 +82,89 @@ def gm_save_tables (dest_dir, belief):
                                   os.path.join(dest_dir,"eigval.csv"), ",");                                 
                                   
     gm_sql_save_table_to_file(db_conn, GM_EIG_VECTORS, "row_id, col_id, value", \
-                                  os.path.join(dest_dir,"eigvec.csv"), ",");                               
-                                  
+                                  os.path.join(dest_dir,"eigvec.csv"), ","); 
+
+    gm_sql_save_table_to_file(db_conn, "kvalue_dist", "kvalue, num", \
+                                  os.path.join(dest_dir,"4_kvalue_dist.csv"), ",");
+    
+    gm_sql_save_table_to_file(db_conn, "component_size_dist", "component_size, num", \
+                                  os.path.join(dest_dir,"3_component_size_dist.csv"), ",");
+
+    gm_sql_save_table_to_file(db_conn, "radius_dist", "radius, num", \
+                                  os.path.join(dest_dir,"5_radius_dist.csv"), ",");
+
+    # gm_sql_save_table_to_file(db_conn, "triangle", "node_id, triangle", \
+    #                               os.path.join(dest_dir,"8_triangle.csv"), ",");
+    # gm_sql_save_table_to_file(db_conn, "triangle_dist", "triangle, num", \
+    #                               os.path.join(dest_dir,"7_triangle_dist.csv"), ",");
+                               
 
 #Project Tasks
+ 
+def gm_kcore (): # by TA
+    global index_type
+    cur = db_conn.cursor() 
+
+    # Create the tables
+    gm_sql_table_drop_create(db_conn, "GM_NODE", "node_id integer, inout_degree integer")
+    gm_sql_table_drop_create(db_conn, "GM_EDGES", "src_id integer, dst_id integer")
+    gm_sql_table_drop_create(db_conn, "GM_CORE_VALUES", "node_id integer, kvalue integer") 
+
+    # Create the tables & indices
+    cur.execute ("INSERT INTO GM_EDGES select src_id, dst_id from %s" %GM_TABLE )
+    cur.execute ("INSERT INTO GM_NODE select src_id, count(*) from GM_EDGES group by src_id")
+    cur.execute ("CREATE index node_index on GM_NODE (node_id)")
+    cur.execute ("CREATE index degree_index on GM_NODE (inout_degree)")
+    if index_type == 1:
+        # non-clustering           
+        cur.execute("create index kcore_src on GM_EDGES (src_id)")
+    elif index_type == 2:
+        # clustering
+        cur.execute("create index kcore_src on GM_EDGES (src_id)")
+        cur.execute("CLUSTER GM_EDGES USING kcore_src")
+    elif index_type == 3:
+        # composite
+        cur.execute("create index kcore_compo on GM_EDGES (src_id, dst_id)")
+        cur.execute ("cluster GM_EDGES using kcore_compo")
+    
+    cur.execute ("select count(*) from GM_NODE")
+
+    num = cur.fetchone()[0]
+    print num
+
+    # shaving
+    k = 0
+    for i in xrange(0, num):
+        cur.execute ("select node_id, inout_degree from GM_NODE where inout_degree = (select min(inout_degree) from GM_NODE) limit 1")
+
+        node, degree = cur.fetchone()
+        k = max(k, degree)
+
+        cur.execute ("update GM_NODE set inout_degree = inout_degree-1 where node_id in (select dst_id from GM_EDGES where src_id = %d )" % node)
+        cur.execute ("INSERT INTO GM_CORE_VALUES values (%d, %d)" %(node, k))
+        cur.execute ("delete from GM_NODE where node_id = %d" %(node))
+
+
+    print "The degeneracy value of the graph is: " + str(k)
+
+    # cur.execute ("select count(*), kvalue from GM_CORE_VALUES group by kvalue")
+
+    # output_file = file('core.txt', 'w')
+
+    # res = cur.fetchall()
+    # for line in res:
+    #     output_file.write(str(line[0]) + ',' + str(line[1]) + '\n')
+
+    # save kcore distribution
+    gm_sql_table_drop_create(db_conn, "kvalue_dist", "kvalue integer, num integer")  
+    cur.execute ("INSERT INTO kvalue_dist SELECT kvalue, count(node_id) as num FROM GM_CORE_VALUES group by kvalue")
+    
+    db_conn.commit()
+    cur.close()
 
 #Task 0: kcore
-def gm_kcore ():
-    cur = db_conn.cursor()    
-    
-    # Create Table to store node degrees
-    # If the graph is undirected, all the degree values will be the same
+def gm_kcore_my (): # our own 
+    # compute coreness of each node
     print "Computing kcore..."
     
     cur = db_conn.cursor()
@@ -97,15 +173,26 @@ def gm_kcore ():
     gm_sql_table_drop_create(db_conn, GM_KCORE, "node_id integer, \
                                  coreness integer")
     gm_sql_table_drop_create(db_conn, GM_TABLE_DUP, "src_id integer, dst_id integer")
-    cur.execute("insert into %s" % GM_TABLE_DUP + " select * from %s" %GM_TABLE)
+
+    cur.execute("insert into %s" % GM_TABLE_DUP + " select src_id, dst_id from %s" %GM_TABLE)
     db_conn.commit()
+
+    cur.execute("create index on %s (src_id)" % GM_TABLE_DUP)
+    db_conn.commit()
+
     k = 1
     while True:
+        # each time we pick out elements with less than k neighbors and output them with coreness k
+        # delete from the original table whose neighbor are those elements
+        # if we get no such elements, we increase k
+        # until we get no elements left in the orginal table
+
         gm_sql_table_drop_create(db_conn, GM_KCORE_TMP, "src_id integer, \
                                  neighbor integer")
         cur.execute ("insert into %s" % GM_KCORE_TMP + 
                      " select src_id, count(*) as neighbor from %s" % GM_TABLE_DUP +
                      " group by src_id having count(*) <= %d" % k)
+        cur.execute("create index on %s (src_id)" % GM_KCORE_TMP)
         db_conn.commit()
         cur.execute("select count(*) from %s" % GM_KCORE_TMP)
         val = cur.fetchone()[0]
@@ -116,9 +203,11 @@ def gm_kcore ():
         cur.execute ("INSERT INTO %s" % GM_KCORE +
                                  " SELECT src_id , %d" % k + " as coreness from %s" %GM_KCORE_TMP)
         db_conn.commit()
-        cur.execute("delete from %s"%GM_TABLE_DUP + " where src_id in (select src_id from %s)"%GM_KCORE_TMP + 
-            " or dst_id in (select src_id from %s)"%GM_KCORE_TMP)
-        db_conn.commit()    
+
+        cur.execute("delete from %s"%GM_TABLE_DUP + " where src_id in (select src_id from %s)"%GM_KCORE_TMP)
+        cur.execute("delete from %s"%GM_TABLE_DUP + " where dst_id in (select src_id from %s)"%GM_KCORE_TMP)
+        db_conn.commit()  
+
         cur.execute("select count(*) from %s"%GM_TABLE_DUP)
         val = cur.fetchone()[0]
         if val == 0:
@@ -128,6 +217,7 @@ def gm_kcore ():
     gm_sql_table_drop(db_conn, GM_KCORE_TMP)
 
     cur.close()
+
 #Task 1: Degree distribution
 #-----------------------------------------------------------------------------#
 def gm_node_degrees ():
@@ -172,7 +262,7 @@ def gm_degree_distribution (undirected):
     cur.execute ("INSERT INTO %s" % GM_OUTDEGREE_DISTRIBUTION +
                             " SELECT out_degree \"degree\", count(*) FROM %s" % (GM_NODE_DEGREES) +
                             " GROUP BY out_degree");
-                            
+
     if (undirected):
         # Degree distribution is same as in/out degree distribution for undirected graphs
         cur.execute ("INSERT INTO %s" % GM_DEGREE_DISTRIBUTION +
@@ -182,6 +272,12 @@ def gm_degree_distribution (undirected):
                             " SELECT in_degree+out_degree \"degree\", count(*) FROM %s" % (GM_NODE_DEGREES) +
                             " GROUP BY in_degree+out_degree");
     
+    cur.execute("SELECT * FROM %s ORDER BY degree" % GM_DEGREE_DISTRIBUTION)
+    output_file = file('degree.txt', 'w')
+    res = cur.fetchall()
+    for line in res:
+        output_file.write(str(line[0]) + ',' + str(line[1]) + '\n')
+
     db_conn.commit()                        
     cur.close()
 
@@ -189,7 +285,7 @@ def gm_degree_distribution (undirected):
 # ------------------------------------------------------------------------- #
 def gm_pagerank (num_nodes, max_iterations = gm_param_pr_max_iter, \
                     stop_threshold = gm_param_pr_thres, damping_factor = gm_param_pr_damping):
-    
+    global index_type
     offset_table = "GM_PR_OFFSET"
     next_table = "GM_PR_NEXT"
     norm_table = "GM_PR_NORM"
@@ -198,6 +294,17 @@ def gm_pagerank (num_nodes, max_iterations = gm_param_pr_max_iter, \
     print "Computing PageRanks..."
     
     gm_sql_table_drop_create(db_conn, norm_table,"src_id integer, dst_id integer, weight double precision")
+    if index_type == 1:
+        # non-clustering           
+        cur.execute("create index pr_src on %s (src_id)" % norm_table)
+    elif index_type == 2:
+        # clustering
+        cur.execute("create index pr_src on %s (src_id)" % norm_table)
+        cur.execute("CLUSTER %s USING pr_src" % norm_table)
+    elif index_type == 3:
+        # composite
+        cur.execute("create index pr_compo on %s (src_id, dst_id)" % norm_table)
+        cur.execute("CLUSTER %s USING pr_compo" % norm_table)
     
     # Create normalized weighted table
     cur.execute("INSERT INTO %s " % norm_table + 
@@ -251,6 +358,12 @@ def gm_pagerank (num_nodes, max_iterations = gm_param_pr_max_iter, \
     gm_sql_table_drop(db_conn, offset_table)
     gm_sql_table_drop(db_conn, next_table)
     gm_sql_table_drop(db_conn, norm_table)
+
+    cur.execute("SELECT count(*), page_rank FROM %s group by page_rank" % GM_PAGERANK)
+    output_file = file('pagerank.txt', 'w')
+    res = cur.fetchall()
+    for line in res:
+        output_file.write(str(line[0]) + ',' + str(line[1]) + '\n')
     
     cur.close()
     
@@ -294,6 +407,14 @@ def gm_connected_components (num_nodes):
     
     cur.execute ("SELECT count(distinct component_id) FROM %s" % GM_CON_COMP)
     num_components = cur.fetchone()[0]
+
+    # save component distribution
+    gm_sql_table_drop_create(db_conn, "temp1", "component_id integer, component_size integer")  
+    gm_sql_table_drop_create(db_conn, "component_size_dist", "component_size integer, num integer")  
+    cur.execute ("INSERT INTO temp1 SELECT component_id, count(node_id) as component_size FROM %s group by component_id" % GM_CON_COMP)
+    cur.execute ("INSERT INTO component_size_dist SELECT component_size, count(component_id) as num FROM temp1 group by component_size")
+
+    
     
     print "Number of Components =", num_components    
     cur.close()
@@ -365,6 +486,14 @@ def gm_all_radius (num_nodes, max_iter = gm_param_radius_max_iter):
     cur.execute ("SELECT max(radius) FROM %s" % GM_RADIUS)
     max_radius = cur.fetchone()[0]   
     print "Maximum effective radius =", max_radius
+
+    cur.execute ("SELECT avg(radius) FROM %s" % GM_RADIUS)
+    avg_radius = cur.fetchone()[0]   
+    print "Average effective radius =", avg_radius    
+    
+    # save radius distribution
+    gm_sql_table_drop_create(db_conn, "radius_dist", "radius integer, num integer")  
+    cur.execute ("INSERT INTO radius_dist SELECT radius, count(node_id) as num FROM %s group by radius" % GM_RADIUS)
     
     # drop temp tables
     gm_sql_table_drop(db_conn, max_hop_ngh)
@@ -772,6 +901,8 @@ def gm_naive_triangle_count(adj_table=GM_TABLE_UNDIRECT):
     temp_table = "GM_TRIANG_TEMP"
     temp_table2 = "GM_TRIANG_TEMP2"
     temp_table3 = "GM_TRIANG_TEMP3"
+    temp_table4 = "GM_TRIANG_TEMP4"
+    temp_table4 = "GM_TRIANG_TEMP5"
     
     cur = db_conn.cursor()
     gm_sql_table_drop_create(db_conn, temp_table,"row_id integer, col_id integer, value double precision")
@@ -793,6 +924,15 @@ def gm_naive_triangle_count(adj_table=GM_TABLE_UNDIRECT):
     
     
     cnt = gm_sql_mat_trace(db_conn, temp_table3, "row_id", "col_id", "value")
+
+    print "begin saving triangle results"
+
+    # save triangle count
+    gm_sql_table_drop_create(db_conn, "triangle","node_id integer, triangle double precision") 
+    gm_sql_table_drop_create(db_conn, "triangle_dist","triangle double precision, num integer")    
+    cur.execute("INSERT INTO %s SELECT row_id as node_id, value as triangle FROM %s where row_id=col_id" % ("triangle", temp_table3))
+    cur.execute("INSERT INTO %s SELECT triangle, count(node_id) as num FROM %s group by triangle" % ("triangle_dist", "triangle"))
+
 
     print "Number of Triangles(naive) = " + (str(cnt/6))
     
@@ -845,6 +985,7 @@ def gm_anomaly_detection():
 def main():
     global db_conn
     global GM_TABLE
+    global index_type
      # Command Line processing
     parser = argparse.ArgumentParser(description="Graph Miner Using SQL v1.0")
     parser.add_argument ('--file', dest='input_file', type=str, required=True,
@@ -880,10 +1021,12 @@ def main():
                          nodes have priors >0, negative nodes <0 and unknown nodes 0. ')
                          
     args = parser.parse_args()
+    dest_dir = args.dest_dir
     
     try:
         # Run the various graph algorithm below
         db_conn = gm_db_initialize()
+        
         
         gm_sql_table_drop_create(db_conn, GM_TABLE, "src_id integer, dst_id integer, weight real default 1")
         if (args.unweighted):
@@ -891,36 +1034,57 @@ def main():
         else:
             col_fmt = "src_id, dst_id, weight"
             
-        gm_sql_load_table_from_file(db_conn, GM_TABLE, col_fmt, args.input_file, args.delimiter)
+        gm_sql_load_table_from_file(db_conn, GM_TABLE, col_fmt, args.input_file, ',')
+        cur = db_conn.cursor()
         
-        gm_to_undirected(False)
+        gm_to_undirected(True)
         
         if (args.undirected):
             GM_TABLE = GM_TABLE_UNDIRECT
-                   
+        
+        if index_type == 1:
+            # non-clustering           
+            cur.execute("create index src on %s (src_id)" % GM_TABLE)
+        elif index_type == 2:
+            # clustering
+            cur.execute("create index src on %s (src_id)" % GM_TABLE)
+            cur.execute("CLUSTER %s USING src" % GM_TABLE)
+        elif index_type == 3:
+            # composite
+            cur.execute("create index compo on %s (src_id, dst_id)" % GM_TABLE)
+            cur.execute("CLUSTER %s USING compo" % GM_TABLE)
+
+        db_conn.commit()
         # Create table of node ids
         gm_create_node_table()
+
         # Get number of nodes
-        cur = db_conn.cursor()
+        
         cur.execute("SELECT count(*) from %s" % GM_NODES)
         num_nodes = cur.fetchone()[0]  
-        
+        print "Number of nodes = " + str(num_nodes)
+
+        start_time = time.time()
         gm_node_degrees()
+        # k core
         gm_kcore()
-        
-        # Tasks
+        # degree distribution
         gm_degree_distribution(args.undirected)                 # Degree distribution
-        
+        # pagerank
         gm_pagerank(num_nodes)                                  # Pagerank
+        # connected components
         gm_connected_components(num_nodes)                      # Connected components
+        # eigen values
         gm_eigen(gm_param_eig_max_iter, num_nodes, gm_param_eig_thres1, gm_param_eig_thres2)    
-        gm_all_radius(num_nodes)     
+        # node radius
+        gm_all_radius(num_nodes)
+        # fast belief prop
         if (args.belief_file):
             gm_belief_propagation(args.belief_file, args.delimiter, args.undirected)
-        
-        
-        gm_eigen_triangle_count()
-        #gm_naive_triangle_count()
+        # triangle count
+        # gm_eigen_triangle_count()
+        # gm_naive_triangle_count()
+        print "Overrall time taken = " + str(time.time() - start_time)
 
         # Save tables to disk
         gm_save_tables(args.dest_dir, args.belief_file)

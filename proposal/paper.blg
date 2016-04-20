@@ -4,44 +4,49 @@ The top-level auxiliary file: paper.aux
 The style file: plain.bst
 Database file #1: BIB/christosref.bib
 Database file #2: BIB/other.bib
-You've used 6 entries,
+Warning--to sort, need author or key in MSR
+Warning--empty author in MSR
+Warning--empty journal in MSR
+Warning--empty year in MSR
+You've used 7 entries,
             2118 wiz_defined-function locations,
-            1246 strings with 16734 characters,
-and the built_in function-call counts, 2665 in all, are:
-= -- 258
-> -- 133
+            1249 strings with 16796 characters,
+and the built_in function-call counts, 2824 in all, are:
+= -- 271
+> -- 134
 < -- 3
-+ -- 52
++ -- 53
 - -- 46
-* -- 180
-:= -- 413
-add.period$ -- 20
-call.type$ -- 6
-change.case$ -- 41
+* -- 194
+:= -- 432
+add.period$ -- 21
+call.type$ -- 7
+change.case$ -- 44
 chr.to.int$ -- 0
-cite$ -- 6
-duplicate$ -- 110
-empty$ -- 212
+cite$ -- 11
+duplicate$ -- 120
+empty$ -- 230
 format.name$ -- 46
-if$ -- 584
+if$ -- 617
 int.to.chr$ -- 0
-int.to.str$ -- 6
-missing$ -- 6
-newline$ -- 33
+int.to.str$ -- 7
+missing$ -- 7
+newline$ -- 36
 num.names$ -- 12
-pop$ -- 56
+pop$ -- 64
 preamble$ -- 1
-purify$ -- 35
+purify$ -- 37
 quote$ -- 0
-skip$ -- 81
+skip$ -- 87
 stack$ -- 0
-substring$ -- 161
+substring$ -- 166
 swap$ -- 40
 text.length$ -- 3
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 24
-warning$ -- 0
+type$ -- 28
+warning$ -- 4
 while$ -- 22
-width$ -- 7
-write$ -- 68
+width$ -- 8
+write$ -- 73
+(There were 4 warnings)
